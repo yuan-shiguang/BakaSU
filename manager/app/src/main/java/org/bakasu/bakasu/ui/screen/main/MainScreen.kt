@@ -45,13 +45,13 @@ import org.bakasu.bakasu.ui.util.LocalPagerState
 import org.bakasu.bakasu.ui.util.LocalPortraitState
 import org.bakasu.bakasu.ui.util.LocalSelectedPage
 import org.bakasu.bakasu.ui.util.LocalSnackbarHost
+import org.bakasu.bakasu.ui.util.pager.PagerGestureNestedScrollConnection
+import org.bakasu.bakasu.ui.util.pager.PagerInterceptionMode
+import org.bakasu.bakasu.ui.util.pager.PagerNavigationSpringSpec
+import org.bakasu.bakasu.ui.util.pager.pagerGestureOverride
 import org.bakasu.bakasu.ui.viewmodel.HomeViewModel
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import top.yukonga.miuix.kmp.utils.PagerGestureNestedScrollConnection
-import top.yukonga.miuix.kmp.utils.PagerInterceptionMode
-import top.yukonga.miuix.kmp.utils.PagerNavigationSpringSpec
-import top.yukonga.miuix.kmp.utils.pagerGestureOverride
 
 @Composable
 fun MainScreen(

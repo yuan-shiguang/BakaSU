@@ -20,9 +20,9 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import org.bakasu.bakasu.ui.theme.LocalBackgroundRenderState
 import org.bakasu.bakasu.ui.util.LocalPagerPage
 import org.bakasu.bakasu.ui.util.LocalPagerState
+import org.bakasu.bakasu.ui.util.pager.PagerGestureNestedScrollConnection
+import org.bakasu.bakasu.ui.util.pager.horizontalPagerSwipeOverride
 import top.yukonga.miuix.kmp.nav.core.LocalNavTransitionScope
-import top.yukonga.miuix.kmp.utils.PagerGestureNestedScrollConnection
-import top.yukonga.miuix.kmp.utils.horizontalPagerSwipeOverride
 
 @Composable
 fun HorizontalPagerWithInteraction(

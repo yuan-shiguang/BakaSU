@@ -1,7 +1,7 @@
 // Copyright 2026, compose-miuix-ui contributors
 // SPDX-License-Identifier: Apache-2.0
 
-package top.yukonga.miuix.kmp.utils
+package org.bakasu.bakasu.ui.util.pager
 
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animate
