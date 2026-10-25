@@ -119,6 +119,19 @@ import top.yukonga.miuix.kmp.blur.drawBackdrop
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.runtimeShaderEffect
 import top.yukonga.miuix.kmp.blur.textureBlurEffect
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import top.yukonga.miuix.kmp.theme.ColorSchemeMode
+import top.yukonga.miuix.kmp.theme.LocalContentColor
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.ThemeColorSpec
+import top.yukonga.miuix.kmp.theme.ThemeController
+import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
+
+enum class UiMode {
+    Material,
+    Miuix,
+}
 
 @Stable
 class ThemeConfig(
@@ -153,6 +166,7 @@ class ThemeConfig(
         }
     var isUseBackgroundSeedColor by mutableStateOf(false)
     var bottomBarStyle by mutableStateOf(BottomBarStyle.MATERIAL3_EXPRESSIVE)
+    var uiMode by mutableStateOf(UiMode.Material)
 
     fun resetBackgroundState() {
         backgroundImageLoaded = false
@@ -349,6 +363,32 @@ fun KernelSUTheme(
     content: @Composable () -> Unit,
 ) {
     val themeConfig = koinInject<ThemeConfig>()
+    when (themeConfig.uiMode) {
+        UiMode.Miuix -> MiuixKernelSUTheme(
+            dpi = dpi,
+            darkTheme = darkTheme,
+            dynamicColor = dynamicColor,
+            content = content,
+        )
+
+        else -> MaterialKernelSUTheme(
+            dpi = dpi,
+            darkTheme = darkTheme,
+            dynamicColor = dynamicColor,
+            content = content,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun MaterialKernelSUTheme(
+    dpi: Int = 0,
+    darkTheme: Boolean? = null,
+    dynamicColor: Boolean? = null,
+    content: @Composable () -> Unit,
+) {
+    val themeConfig = koinInject<ThemeConfig>()
     val themeRepository = koinInject<ThemeRepository>()
     val backgroundManager = koinInject<BackgroundManager>()
     val cardConfig = koinInject<CardConfig>()
@@ -428,6 +468,174 @@ fun KernelSUTheme(
             ) {
                 BackgroundLayer(themeConfig, settings, backgroundRenderState)
                 content()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun MiuixKernelSUTheme(
+    dpi: Int = 0,
+    darkTheme: Boolean? = null,
+    dynamicColor: Boolean? = null,
+    content: @Composable () -> Unit,
+) {
+    val themeConfig = koinInject<ThemeConfig>()
+    val themeRepository = koinInject<ThemeRepository>()
+    val backgroundManager = koinInject<BackgroundManager>()
+    val cardConfig = koinInject<CardConfig>()
+    val settings = koinInject<AppSettingsRepository>()
+    val backgroundRenderState = remember { BackgroundRenderState() }
+    val resolvedDarkTheme = darkTheme ?: isInDarkTheme(themeConfig.forceDarkMode)
+    val resolvedDynamicColor = dynamicColor ?: themeConfig.useDynamicColor
+    val context = LocalContext.current
+    val systemIsDark = isSystemInDarkTheme()
+
+    // 初始化主题（与 Material 模式共用同一套配置加载）
+    ThemeInitializer(
+        context = context,
+        systemIsDark = systemIsDark,
+        themeConfig = themeConfig,
+        themeRepository = themeRepository,
+        backgroundManager = backgroundManager,
+        cardConfig = cardConfig,
+        settings = settings,
+    )
+
+    // miuix 调色板风格 / 色彩规范（与上游 MiuixKernelSUTheme 对齐）
+    val miuixPaletteStyle = try {
+        ThemePaletteStyle.valueOf(themeConfig.dynamicPaletteStyle.name)
+    } catch (_: Exception) {
+        ThemePaletteStyle.TonalSpot
+    }
+    val miuixColorSpec = if (themeConfig.dynamicColorSpec == ColorSpec.SpecVersion.SPEC_2025) {
+        ThemeColorSpec.Spec2025
+    } else {
+        ThemeColorSpec.Spec2021
+    }
+
+    // 主题种子色：背景取色 > 动态(Monet) > 自定义
+    val miuixKeyColor: Color? = when {
+        themeConfig.isUseBackgroundSeedColor && backgroundRenderState.seedColor != 0 ->
+            Color(backgroundRenderState.seedColor)
+        resolvedDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            (if (resolvedDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)).primary
+        resolvedDynamicColor ->
+            Color(themeConfig.monetCompatSeedColor)
+        else ->
+            Color(themeConfig.seedColor)
+    }
+
+    // 颜色模式：动态(Monet) / 跟随系统 / 强制深浅
+    val colorSchemeMode = when {
+        resolvedDynamicColor && themeConfig.forceDarkMode == null -> ColorSchemeMode.MonetSystem
+        resolvedDynamicColor && resolvedDarkTheme -> ColorSchemeMode.MonetDark
+        resolvedDynamicColor && !resolvedDarkTheme -> ColorSchemeMode.MonetLight
+        themeConfig.forceDarkMode == null -> ColorSchemeMode.System
+        resolvedDarkTheme -> ColorSchemeMode.Dark
+        else -> ColorSchemeMode.Light
+    }
+
+    val controller = ThemeController(
+        colorSchemeMode = colorSchemeMode,
+        keyColor = miuixKeyColor,
+        isDark = resolvedDarkTheme,
+        paletteStyle = miuixPaletteStyle,
+        colorSpec = miuixColorSpec,
+    )
+
+    // 系统栏样式
+    SystemBarController(resolvedDarkTheme)
+
+    val systemDensity = LocalDensity.current
+
+    val density = remember(systemDensity, dpi) {
+        if (dpi <= 0f) {
+            systemDensity
+        } else {
+            val targetDensity = dpi / 160f
+            Density(density = targetDensity, fontScale = systemDensity.fontScale)
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalDensity provides density,
+        LocalBackgroundRenderState provides backgroundRenderState,
+    ) {
+        MiuixTheme(controller = controller) {
+            // 在 miuix 主题上下文内取得 miuix 调色板，并叠回完整的 Material3 角色，
+            // 使纯 Material3 组件也能获得 miuix 配色。
+            val miuixColors = controller.currentColors()
+            val miuixScheme = createColorScheme(
+                resolvedDarkTheme,
+                resolvedDynamicColor,
+                themeConfig,
+                backgroundRenderState,
+            ).copy(
+                primary = miuixColors.primary,
+                onPrimary = miuixColors.onPrimary,
+                primaryContainer = miuixColors.primaryContainer,
+                onPrimaryContainer = miuixColors.onPrimaryContainer,
+                secondary = miuixColors.secondary,
+                onSecondary = miuixColors.onSecondary,
+                secondaryContainer = miuixColors.secondaryContainer,
+                onSecondaryContainer = miuixColors.onSecondaryContainer,
+                tertiaryContainer = miuixColors.tertiaryContainer,
+                onTertiaryContainer = miuixColors.onTertiaryContainer,
+                error = miuixColors.error,
+                onError = miuixColors.onError,
+                errorContainer = miuixColors.errorContainer,
+                onErrorContainer = miuixColors.onErrorContainer,
+                background = miuixColors.background,
+                onBackground = miuixColors.onBackground,
+                surface = miuixColors.surface,
+                onSurface = miuixColors.onSurface,
+                surfaceVariant = miuixColors.surfaceVariant,
+                surfaceContainer = miuixColors.surfaceContainer,
+                surfaceContainerHigh = miuixColors.surfaceContainerHigh,
+                surfaceContainerHighest = miuixColors.surfaceContainerHighest,
+                outline = miuixColors.outline,
+            )
+
+            MaterialExpressiveTheme(
+                colorScheme = miuixScheme,
+                motionScheme = MotionScheme.expressive(),
+                typography = generateTypography(themeConfig),
+            ) {
+                CompositionLocalProvider(
+                    LocalContentColor provides miuixColors.onBackground,
+                ) {
+                    val backgroundMotionConnection = remember(backgroundRenderState) {
+                        object : NestedScrollConnection {
+                            override fun onPostScroll(
+                                consumed: Offset,
+                                available: Offset,
+                                source: NestedScrollSource,
+                            ): Offset {
+                                backgroundRenderState.scrollActive = true
+                                return Offset.Zero
+                            }
+
+                            override suspend fun onPostFling(
+                                consumed: Velocity,
+                                available: Velocity,
+                            ): Velocity {
+                                backgroundRenderState.scrollActive = false
+                                return Velocity.Zero
+                            }
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .nestedScroll(backgroundMotionConnection),
+                    ) {
+                        // 背景壁纸：复用与 Material 模式相同的壁纸 / 模糊系统
+                        BackgroundLayer(themeConfig, settings, backgroundRenderState)
+                        content()
+                    }
+                }
             }
         }
     }

@@ -257,6 +257,9 @@
     <string name="home_card_icons">Show icons on home cards</string>
     <string name="home_card_icons_summary">Add icons to the home information cards</string>
     <string name="theme_mode">Theme</string>
+    <string name="theme_style">Theme style</string>
+    <string name="theme_style_material">Material (default)</string>
+    <string name="theme_style_miuix">Miuix</string>
     <string name="theme_follow_system">Follow system</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

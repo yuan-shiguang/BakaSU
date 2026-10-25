@@ -4,6 +4,7 @@ import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import org.bakasu.bakasu.data.AppSettingsRepository
 import org.bakasu.bakasu.domain.model.coerceCompatibleWith
+import org.bakasu.bakasu.ui.theme.UiMode
 
 class ThemeRepository(
     private val settings: AppSettingsRepository,
@@ -106,5 +107,14 @@ class ThemeRepository(
         "gray" -> 0xFF5B5C5C.toInt()
         "yellow" -> 0xFF6D5E0F.toInt()
         else -> null
+    }
+
+    fun saveUiMode(mode: UiMode) {
+        settings.putString("ui_mode", mode.name.lowercase())
+    }
+
+    fun loadUiMode(): UiMode = when (settings.getString("ui_mode", "material")) {
+        "miuix" -> UiMode.Miuix
+        else -> UiMode.Material
     }
 }

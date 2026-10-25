@@ -250,6 +250,9 @@
     <string name="home_card_icons">主页卡片显示图标</string>
     <string name="home_card_icons_summary">主页信息卡片添加图标展示</string>
     <string name="theme_mode">主题模式</string>
+    <string name="theme_style">主题风格</string>
+    <string name="theme_style_material">Material(默认)</string>
+    <string name="theme_style_miuix">Miuix</string>
     <string name="theme_follow_system">跟随系统</string>
     <string name="theme_light">浅色</string>
     <string name="theme_dark">深色</string>

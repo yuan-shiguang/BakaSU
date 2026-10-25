@@ -46,6 +46,7 @@ class SettingsPlatformRepository(
         themeConfig.dynamicPaletteStyle = themeRepository.loadDynamicPaletteStyle(
             themeConfig.dynamicColorSpec,
         )
+        themeConfig.uiMode = themeRepository.loadUiMode()
         themeConfig.useBuiltinMonoFont = settings.getBoolean("use_builtin_monospace_font", false)
         backgroundManager.loadCustomBackground()
         val systemDpi = application.resources.displayMetrics.densityDpi

@@ -116,6 +116,8 @@ import org.bakasu.bakasu.ui.theme.BackgroundManager
 import org.bakasu.bakasu.ui.theme.BottomBarStyle
 import org.bakasu.bakasu.ui.theme.CardConfig
 import org.bakasu.bakasu.ui.theme.ThemeConfig
+import org.bakasu.bakasu.data.theme.ThemeRepository
+import org.bakasu.bakasu.ui.theme.UiMode
 import org.bakasu.bakasu.ui.theme.blurEffect
 import org.bakasu.bakasu.ui.theme.blurSource
 import org.bakasu.bakasu.ui.util.adaptiveScaffoldWindowInsets
@@ -519,6 +521,7 @@ private fun AppearanceSettings(
     val themeConfig: ThemeConfig = koinInject()
     val cardConfig: CardConfig = koinInject()
     val backgroundManager: BackgroundManager = koinInject()
+    val themeRepository: ThemeRepository = koinInject()
     val paletteStyles = state.dynamicColorSpec.availablePaletteStyles()
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.screenWidthDp < configuration.screenHeightDp ||
@@ -527,6 +530,24 @@ private fun AppearanceSettings(
         item {
             // 语言设置
             LanguageSetting(state = state, viewModel = viewModel)
+        }
+
+        item {
+            // 主题风格（Material / Miuix）
+            SettingsChooseWidget(
+                icon = Icons.TwoTone.Palette,
+                title = stringResource(R.string.theme_style),
+                items = listOf(
+                    stringResource(R.string.theme_style_material),
+                    stringResource(R.string.theme_style_miuix),
+                ),
+                selectedIndex = if (themeConfig.uiMode == UiMode.Miuix) 1 else 0,
+                onSelectedIndexChange = { index ->
+                    val mode = if (index == 1) UiMode.Miuix else UiMode.Material
+                    themeRepository.saveUiMode(mode)
+                    themeConfig.uiMode = mode
+                },
+            )
         }
 
         item {
